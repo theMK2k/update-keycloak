@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+      "allowSyntheticDefaultImports": true,
+      "esModuleInterop": true,
+      "lib": ["es2020", "DOM"],
+      "module": "commonjs",
+      "moduleResolution": "node",
+      "outDir": "./dist",
+      "sourceMap": true,
+      "target": "ES2020",
+      "resolveJsonModule": true
+      // "typeRoots": ["src/@types", "node_modules/@types", "../node_modules/@types"]
+  },
+  "include": ["./*"],
+  "exclude": ["node_modules"]
+}
