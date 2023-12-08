@@ -1,5 +1,5 @@
 /**
- * Update Keycloak v1.0.0
+ * Update Keycloak v1.0.1
  *
  * This tool updates an application client's permissions and roles in keycloak.
  * This way you can manage your permissions and roles in your code and update them from your shell and during CI/CD.
@@ -53,6 +53,7 @@ if (!APPLICATION_CLIENT_ID) {
 }
 // #endregion Env-Vars
 
+// main function
 (async () => {
   logger.setLevel(<any>(LOG_LEVEL || "info"));
 
@@ -382,13 +383,19 @@ async function processLocalCompositeRoles(
 
   logger.debug("  found", rolesRemote.length, "roles");
 
+  logger.info();
+
   for (const roleKey of Object.keys(localRoles)) {
     const roleName = `r:${roleKey}`;
     const localRole = localRoles[roleKey];
 
+    logger.debug(`localRole:`, localRole);
+
     logger.debug(
-      `\nProcessing local composite role '${roleKey}' as '${roleName}'...`
+      `\nProcessing local composite role '${roleKey}' as '${roleName}' with`, localRole.roles?.length, `associated roles and`, localRole.permissions?.length, `associated permissions ...`
     );
+
+    logger.debug(`localRole:`, localRole);
 
     const remoteRole = rolesRemote.find(
       (roleRemote: any) => roleRemote.name === roleName
@@ -416,15 +423,17 @@ async function processLocalCompositeRoles(
       })
     ).data;
 
+    // logger.debug('remoteRoleComposites:', remoteRoleComposites)
+
     logger.debug("  found", remoteRoleComposites.length, "remote composites");
 
     const itemsToAdd = [];
 
     // match local permissions with remote associated permissions
-    for (const permission of localRole.permissions) {
-      const permissionName = `p:${permission}`;
+    for (const localPermission of localRole.permissions) {
+      const permissionName = `p:${localPermission}`;
       logger.debug(
-        `    associated local permission '${permission}' as '${permissionName}'...`
+        `    associated local permission '${localPermission}' as '${permissionName}'...`
       );
 
       const remoteAssociatedPermission = remoteRoleComposites.find(
@@ -460,9 +469,9 @@ async function processLocalCompositeRoles(
     }
 
     // match local associated roles with remote associated roles
-    for (const role of localRole.roles) {
-      const roleName = `r:${role}`;
-      logger.debug(`    associated local role '${role}' as '${roleName}'...`);
+    for (const localRoles of localRole.roles) {
+      const roleName = `r:${localRoles}`;
+      logger.debug(`    associated local role '${localRoles}' as '${roleName}'...`);
 
       const remoteAssociatedRole = remoteRoleComposites.find(
         (remoteComposite: any) => remoteComposite.name === roleName
@@ -489,7 +498,6 @@ async function processLocalCompositeRoles(
 
     if (itemsToAdd.length === 0) {
       logger.debug(`  no items to add`);
-      continue;
     } else {
       await axios({
         method: "post",
@@ -499,5 +507,39 @@ async function processLocalCompositeRoles(
       });
       logger.debug("        OK");
     }
+
+    const itemsToRemove = [];
+    for (const remoteComposite of remoteRoleComposites) {
+      const remoteCompositeName = remoteComposite.name;
+      
+      if (
+        localRole.permissions.find(
+          (permission) => `p:${permission}` === remoteCompositeName
+        ) ||
+        localRole.roles.find(
+          (role) => `r:${role}` === remoteCompositeName
+        )
+      ) {
+        logger.debug(`    remote composite '${remoteCompositeName}' found locally, skipping...`);
+        continue;
+      }
+
+      logger.debug(`    remote composite '${remoteCompositeName}' not found locally, removing...`);
+      itemsToRemove.push(remoteComposite);
+    }
+
+    if (itemsToRemove.length === 0) {
+      logger.debug(`  no items to remove`);
+    } else {
+      await axios({
+        method: "delete",
+        url: `${ADMIN_BASE_URL}/roles-by-id/${remoteRole.id}/composites`,
+        data: itemsToRemove,
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      logger.debug("        OK");
+    }
+
+    logger.info(`${roleName} composite items:`, itemsToAdd.length, "to add,", itemsToRemove.length, "to remove");
   }
 }
