@@ -1,5 +1,5 @@
 /**
- * Update Keycloak v1.0.1
+ * Update Keycloak v1.0.2
  *
  * This tool updates an application client's permissions and roles in keycloak.
  * This way you can manage your permissions and roles in your code and update them from your shell and during CI/CD.
@@ -16,6 +16,9 @@ import qs from "qs";
 import logger from "loglevel";
 
 const doCommit = process.argv.find((arg) => arg.toLowerCase() === "--commit");
+const ignoreWarnings = process.argv.find(
+  (arg) => arg.toLowerCase() === "--ignore-warnings"
+);
 
 // #region Env-Vars
 const LOG_LEVEL = process.env.LOG_LEVEL;
@@ -57,7 +60,7 @@ if (!APPLICATION_CLIENT_ID) {
 (async () => {
   logger.setLevel(<any>(LOG_LEVEL || "info"));
 
-  logger.info("Update Keycloak v1.0.0, LOG_LEVEL:", logger.getLevel());
+  logger.info("Update Keycloak v1.0.2, LOG_LEVEL:", logger.getLevel());
 
   if (!doCommit) {
     logger.info(
@@ -91,6 +94,16 @@ if (!APPLICATION_CLIENT_ID) {
       Object.keys(localRoles).length,
       "roles loaded"
     );
+
+    if (
+      !checkLocalPermissionsAndRoles(localPermissions, localRoles) &&
+      !ignoreWarnings
+    ) {
+      logger.error(
+        "\nABORT due to warnings (see above), use --ignore-warnings to continue anyways"
+      );
+      process.exit(1);
+    }
 
     // logger.debug('permissions and roles:', { permissions, roles });
 
@@ -170,6 +183,33 @@ if (!APPLICATION_CLIENT_ID) {
     logger.error(error);
   }
 })();
+
+/**
+ * Check if all locally defined permissions are covered by the local roles
+ * Print a warning if a permission is not covered by a role
+ * @param localPermissions
+ * @param localRoles
+ */
+function checkLocalPermissionsAndRoles(
+  localPermissions: Record<string, string>,
+  localRoles: Record<string, any>
+): Boolean {
+  let isOK = true;
+  Object.values(localPermissions).forEach((permission) => {
+    if (
+      !Object.values(localRoles).find((role: any) =>
+        role.permissions.includes(permission)
+      )
+    ) {
+      logger.warn(
+        `\nWARNING: Permission '${permission}' is not covered by any role!`
+      );
+      isOK = false;
+    }
+  });
+
+  return isOK;
+}
 
 /**
  * Identify permissions and roles that are locally available but missing remotely and create them
@@ -392,7 +432,11 @@ async function processLocalCompositeRoles(
     logger.debug(`localRole:`, localRole);
 
     logger.debug(
-      `\nProcessing local composite role '${roleKey}' as '${roleName}' with`, localRole.roles?.length, `associated roles and`, localRole.permissions?.length, `associated permissions ...`
+      `\nProcessing local composite role '${roleKey}' as '${roleName}' with`,
+      localRole.roles?.length,
+      `associated roles and`,
+      localRole.permissions?.length,
+      `associated permissions ...`
     );
 
     logger.debug(`localRole:`, localRole);
@@ -471,7 +515,9 @@ async function processLocalCompositeRoles(
     // match local associated roles with remote associated roles
     for (const localRoles of localRole.roles) {
       const roleName = `r:${localRoles}`;
-      logger.debug(`    associated local role '${localRoles}' as '${roleName}'...`);
+      logger.debug(
+        `    associated local role '${localRoles}' as '${roleName}'...`
+      );
 
       const remoteAssociatedRole = remoteRoleComposites.find(
         (remoteComposite: any) => remoteComposite.name === roleName
@@ -511,20 +557,22 @@ async function processLocalCompositeRoles(
     const itemsToRemove = [];
     for (const remoteComposite of remoteRoleComposites) {
       const remoteCompositeName = remoteComposite.name;
-      
+
       if (
         localRole.permissions.find(
           (permission) => `p:${permission}` === remoteCompositeName
         ) ||
-        localRole.roles.find(
-          (role) => `r:${role}` === remoteCompositeName
-        )
+        localRole.roles.find((role) => `r:${role}` === remoteCompositeName)
       ) {
-        logger.debug(`    remote composite '${remoteCompositeName}' found locally, skipping...`);
+        logger.debug(
+          `    remote composite '${remoteCompositeName}' found locally, skipping...`
+        );
         continue;
       }
 
-      logger.debug(`    remote composite '${remoteCompositeName}' not found locally, removing...`);
+      logger.debug(
+        `    remote composite '${remoteCompositeName}' not found locally, removing...`
+      );
       itemsToRemove.push(remoteComposite);
     }
 
@@ -540,6 +588,12 @@ async function processLocalCompositeRoles(
       logger.debug("        OK");
     }
 
-    logger.info(`${roleName} composite items:`, itemsToAdd.length, "to add,", itemsToRemove.length, "to remove");
+    logger.info(
+      `${roleName} composite items:`,
+      itemsToAdd.length,
+      "to add,",
+      itemsToRemove.length,
+      "to remove"
+    );
   }
 }
