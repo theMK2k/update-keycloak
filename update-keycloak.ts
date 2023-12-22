@@ -1,5 +1,5 @@
 /**
- * Update Keycloak v1.0.2
+ * Update Keycloak v1.0.3
  *
  * This tool updates an application client's permissions and roles in keycloak.
  * This way you can manage your permissions and roles in your code and update them from your shell and during CI/CD.
@@ -545,13 +545,17 @@ async function processLocalCompositeRoles(
     if (itemsToAdd.length === 0) {
       logger.debug(`  no items to add`);
     } else {
-      await axios({
-        method: "post",
-        url: `${ADMIN_BASE_URL}/roles-by-id/${remoteRole.id}/composites`,
-        data: itemsToAdd,
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      logger.debug("        OK");
+      if (!doCommit) {
+        logger.debug(`        SKIP (dry-run)`);
+      } else {
+        await axios({
+          method: "post",
+          url: `${ADMIN_BASE_URL}/roles-by-id/${remoteRole.id}/composites`,
+          data: itemsToAdd,
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        logger.debug("        OK");
+      }
     }
 
     const itemsToRemove = [];
@@ -579,13 +583,17 @@ async function processLocalCompositeRoles(
     if (itemsToRemove.length === 0) {
       logger.debug(`  no items to remove`);
     } else {
-      await axios({
-        method: "delete",
-        url: `${ADMIN_BASE_URL}/roles-by-id/${remoteRole.id}/composites`,
-        data: itemsToRemove,
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      logger.debug("        OK");
+      if (!doCommit) {
+        logger.debug(`        SKIP (dry-run)`);
+      } else {
+        await axios({
+          method: "delete",
+          url: `${ADMIN_BASE_URL}/roles-by-id/${remoteRole.id}/composites`,
+          data: itemsToRemove,
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        logger.debug("        OK");
+      }
     }
 
     logger.info(

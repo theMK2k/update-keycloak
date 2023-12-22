@@ -1,6 +1,6 @@
 {
   "name": "update-keycloak",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A CLI tool to keep keycloak client roles up-to-date",
   "main": "index.js",
   "scripts": {
