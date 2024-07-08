@@ -1,5 +1,5 @@
 /**
- * Update Keycloak v1.0.3
+ * Update Keycloak v1.0.4
  *
  * This tool updates an application client's permissions and roles in keycloak.
  * This way you can manage your permissions and roles in your code and update them from your shell and during CI/CD.
@@ -38,22 +38,35 @@ if (!LOGIN_BASE_URL) {
   logger.error("LOGIN_BASE_URL not set!");
   process.exit(1);
 }
+
+logger.info("Using LOGIN_BASE_URL:", LOGIN_BASE_URL);
+
 if (!ADMIN_BASE_URL) {
   logger.error("ADMIN_BASE_URL not set!");
   process.exit(1);
 }
+
+logger.info("Using ADMIN_BASE_URL:", ADMIN_BASE_URL);
+
 if (!SERVICE_ACCOUNT_CLIENT_ID) {
   logger.error("SERVICE_ACCOUNT_CLIENT_ID not set!");
   process.exit(1);
 }
+
+logger.info("Using SERVICE_ACCOUNT_CLIENT_ID:", SERVICE_ACCOUNT_CLIENT_ID);
+
 if (!SERVICE_ACCOUNT_CLIENT_SECRET) {
   logger.error("SERVICE_ACCOUNT_CLIENT_SECRET not set!");
   process.exit(1);
 }
+
 if (!APPLICATION_CLIENT_ID) {
   logger.error("APPLICATION_CLIENT_ID not set!");
   process.exit(1);
 }
+
+logger.info("Using APPLICATION_CLIENT_ID:", APPLICATION_CLIENT_ID);
+
 // #endregion Env-Vars
 
 // main function
