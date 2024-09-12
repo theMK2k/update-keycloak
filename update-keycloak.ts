@@ -1,5 +1,5 @@
 /**
- * Update Keycloak v1.0.4
+ * Update Keycloak v1.0.6
  *
  * This tool updates an application client's permissions and roles in keycloak.
  * This way you can manage your permissions and roles in your code and update them from your shell and during CI/CD.
@@ -73,7 +73,7 @@ logger.info("Using APPLICATION_CLIENT_ID:", APPLICATION_CLIENT_ID);
 (async () => {
   logger.setLevel(<any>(LOG_LEVEL || "info"));
 
-  logger.info("Update Keycloak v1.0.2, LOG_LEVEL:", logger.getLevel());
+  logger.info("Update Keycloak v1.0.6, LOG_LEVEL:", logger.getLevel());
 
   if (!doCommit) {
     logger.info(
