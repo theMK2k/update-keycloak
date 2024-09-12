@@ -609,12 +609,12 @@ async function processLocalCompositeRoles(
       }
     }
 
-    logger.info(
-      `${roleName} composite items:`,
-      itemsToAdd.length,
-      "to add,",
-      itemsToRemove.length,
-      "to remove"
-    );
+    logger.info(`${roleName} composite items:`);
+
+    logger.info(`  to add:`, itemsToAdd.length);
+    itemsToAdd.forEach((item) => logger.info("    ", item.name));
+
+    logger.info(`  to remove:`, itemsToRemove.length);
+    itemsToRemove.forEach((item) => logger.info("    ", item.name));
   }
 }
